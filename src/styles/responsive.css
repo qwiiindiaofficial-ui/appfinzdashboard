@@ -1,0 +1,108 @@
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    width: var(--sidebar-collapsed-width);
+  }
+  .sidebar .nav-item-label,
+  .sidebar .nav-badge,
+  .sidebar .sidebar-logo-text,
+  .sidebar .nav-section-label,
+  .sidebar .user-info {
+    display: none;
+  }
+  .sidebar-logo {
+    justify-content: center;
+    padding: var(--space-4) var(--space-3);
+  }
+  .nav-item {
+    justify-content: center;
+    padding: var(--space-3);
+  }
+  .sidebar-user {
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+  }
+  .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+  }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    position: fixed;
+    width: var(--sidebar-width) !important;
+  }
+  .sidebar .nav-item-label,
+  .sidebar .nav-badge,
+  .sidebar .sidebar-logo-text,
+  .sidebar .nav-section-label,
+  .sidebar .user-info {
+    display: flex !important;
+    opacity: 1 !important;
+    width: auto !important;
+  }
+  .sidebar .nav-item {
+    justify-content: flex-start !important;
+    padding: var(--space-2) var(--space-3) !important;
+  }
+  .sidebar .sidebar-user {
+    justify-content: flex-start !important;
+  }
+  .sidebar .sidebar-logo {
+    justify-content: flex-start !important;
+    padding: var(--space-5) var(--space-4) !important;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    display: none;
+  }
+  .sidebar-overlay.show {
+    display: block;
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+  .hamburger-btn {
+    display: flex;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .page-content {
+    padding: var(--space-4);
+  }
+  .topbar {
+    padding: 0 var(--space-4);
+  }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr; }
+  .drawer { width: 100%; }
+  .modal { max-width: 100%; border-radius: var(--border-radius-lg); }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .search-input-wrap { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}
