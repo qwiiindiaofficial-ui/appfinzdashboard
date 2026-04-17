@@ -1,7 +1,8 @@
 import { projectsService } from '../../services/projects.js';
 import { tasksService } from '../../services/tasks.js';
+import { requestsService } from '../../services/requests.js';
 import { supabase } from '../../lib/supabase.js';
-import { projectStatusBadge, priorityBadge } from '../../components/badge.js';
+import { projectStatusBadge, priorityBadge, requestStatusBadge, REQUEST_STATUSES } from '../../components/badge.js';
 import { formatCurrency, formatDate, formatRelativeTime, generateInitials, avatarColor, escapeHtml } from '../../lib/utils.js';
 import { toast } from '../../components/toast.js';
 import { confirmDialog } from '../../components/modal.js';
@@ -13,23 +14,24 @@ export async function render(container, params = {}) {
   const load = async () => {
     container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
     try {
-      const [project, updates, tasks, profiles] = await Promise.all([
+      const [project, updates, tasks, profiles, requests] = await Promise.all([
         projectsService.getById(params.id),
         projectsService.getUpdates(params.id),
         tasksService.getAll({ projectId: params.id }).then(r => r.data),
         supabase.from('profiles').select('id,full_name').eq('is_active', true).then(r => r.data || []),
+        requestsService.getByProject(params.id),
       ]);
       if (!project) {
         container.innerHTML = `<div class="page-content"><div class="empty-state"><h3>Project not found</h3><a href="#/projects" class="btn btn-primary">Back</a></div></div>`;
         return;
       }
-      renderProject(project, updates, tasks, profiles);
+      renderProject(project, updates, tasks, profiles, requests);
     } catch (err) {
       container.innerHTML = `<div class="page-content"><div class="empty-state"><h3>Error</h3><p>${err.message}</p></div></div>`;
     }
   };
 
-  const renderProject = (project, updates, tasks, profiles) => {
+  const renderProject = (project, updates, tasks, profiles, requests = []) => {
     container.innerHTML = `
       <div class="page-content">
         <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4)">
@@ -114,6 +116,35 @@ export async function render(container, params = {}) {
                   </div>
                 `).join('')}
               </div>
+            </div>
+
+            <div class="card" style="margin-top:var(--space-5)">
+              <div class="card-header">
+                <div class="card-title">Client Requests <span class="tab-count">${requests.length}</span></div>
+                <a href="#/requests" class="btn btn-ghost btn-sm">View All</a>
+              </div>
+              ${requests.length === 0
+                ? `<div style="text-align:center;padding:var(--space-6);color:var(--text-muted);font-size:var(--text-sm)">No requests for this project</div>`
+                : `<div id="project-requests-list">
+                ${requests.map(r => `
+                  <div class="project-request-row" data-id="${r.id}" style="padding:var(--space-3) 0;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background var(--transition-fast)">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-2)">
+                      <div>
+                        <div style="font-size:var(--text-sm);font-weight:var(--font-medium)">${escapeHtml(r.subject)}</div>
+                        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:var(--space-2)">
+                          <span>${r.request_type.replace(/_/g,' ')}</span>
+                          <span>&bull;</span>
+                          <span>${formatRelativeTime(r.created_at)}</span>
+                        </div>
+                      </div>
+                      <div style="display:flex;gap:var(--space-1);flex-shrink:0">${requestStatusBadge(r.status)}</div>
+                    </div>
+                  </div>
+                `).join('')}
+                </div>
+                <div id="request-inline-detail" style="display:none;margin-top:var(--space-4);background:var(--color-gray-50);border:1px solid var(--border-color);border-radius:var(--border-radius);padding:var(--space-4)">
+                </div>`
+              }
             </div>
           </div>
 
@@ -208,6 +239,64 @@ export async function render(container, params = {}) {
     container.querySelectorAll('.task-check').forEach(cb => {
       cb.addEventListener('change', async e => {
         if (e.target.checked) { await tasksService.complete(e.target.dataset.id); }
+      });
+    });
+
+    container.querySelectorAll('.project-request-row').forEach(row => {
+      row.addEventListener('mouseenter', () => { row.style.background = 'var(--color-gray-50)'; });
+      row.addEventListener('mouseleave', () => { row.style.background = ''; });
+      row.addEventListener('click', async () => {
+        const allRows = container.querySelectorAll('.project-request-row');
+        allRows.forEach(r => r.style.background = '');
+        row.style.background = 'var(--color-primary-50)';
+        const req = await requestsService.getById(row.dataset.id);
+        const inlineDetail = container.querySelector('#request-inline-detail');
+        if (!inlineDetail) return;
+        inlineDetail.style.display = '';
+        inlineDetail.innerHTML = `
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--space-3)">
+            <div>
+              <div style="font-size:var(--text-sm);font-weight:var(--font-semibold)">${escapeHtml(req.subject)}</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px">${req.request_type.replace(/_/g,' ')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-2)">
+              ${requestStatusBadge(req.status)}
+              <button id="close-inline-req" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1">&times;</button>
+            </div>
+          </div>
+          <div style="font-size:var(--text-sm);color:var(--text-secondary);white-space:pre-wrap;margin-bottom:var(--space-3)">${escapeHtml(req.body)}</div>
+          <div class="form-group" style="margin-bottom:var(--space-2)">
+            <label class="form-label">Status</label>
+            <select id="inline-req-status" class="form-select">
+              ${REQUEST_STATUSES.map(s => `<option value="${s.value}" ${req.status===s.value?'selected':''}>${s.label}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:var(--space-3)">
+            <label class="form-label">Resolution Note</label>
+            <textarea id="inline-req-note" class="form-textarea" rows="2" placeholder="How was this resolved...">${req.resolution_note || ''}</textarea>
+          </div>
+          <div style="display:flex;gap:var(--space-2);justify-content:flex-end">
+            <button class="btn btn-secondary btn-sm" id="close-inline-req-btn">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="save-inline-req">Save</button>
+          </div>
+        `;
+        const closeDetail = () => {
+          inlineDetail.style.display = 'none';
+          allRows.forEach(r => r.style.background = '');
+        };
+        inlineDetail.querySelector('#close-inline-req').addEventListener('click', closeDetail);
+        inlineDetail.querySelector('#close-inline-req-btn').addEventListener('click', closeDetail);
+        inlineDetail.querySelector('#save-inline-req').addEventListener('click', async () => {
+          const newStatus = inlineDetail.querySelector('#inline-req-status').value;
+          const note = inlineDetail.querySelector('#inline-req-note').value;
+          await requestsService.update(req.id, {
+            status: newStatus,
+            resolution_note: note || null,
+            resolved_at: ['resolved','closed'].includes(newStatus) ? new Date().toISOString() : null,
+          });
+          toast.success('Request updated');
+          load();
+        });
       });
     });
   };

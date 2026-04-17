@@ -29,6 +29,16 @@ export const requestsService = {
     return data;
   },
 
+  async getByProject(projectId) {
+    const { data, error } = await supabase
+      .from('client_requests')
+      .select('*, client:clients(id,company_name), assigned_profile:profiles!client_requests_assigned_to_fkey(id,full_name)')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
   async getStats() {
     const { data } = await supabase.from('client_requests').select('status');
     const stats = { open: 0, in_review: 0, in_progress: 0, resolved: 0, closed: 0 };
