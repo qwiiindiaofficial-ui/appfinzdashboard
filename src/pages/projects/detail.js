@@ -14,12 +14,13 @@ export async function render(container, params = {}) {
   const load = async () => {
     container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
     try {
-      const [project, updates, tasks, profiles, requests] = await Promise.all([
-        projectsService.getById(params.id),
+      const project = await projectsService.getById(params.id);
+      const clientId = project?.client?.id || null;
+      const [updates, tasks, profiles, requests] = await Promise.all([
         projectsService.getUpdates(params.id),
         tasksService.getAll({ projectId: params.id }).then(r => r.data),
         supabase.from('profiles').select('id,full_name').eq('is_active', true).then(r => r.data || []),
-        requestsService.getByProject(params.id),
+        requestsService.getByProject(params.id, clientId),
       ]);
       if (!project) {
         container.innerHTML = `<div class="page-content"><div class="empty-state"><h3>Project not found</h3><a href="#/projects" class="btn btn-primary">Back</a></div></div>`;
