@@ -118,34 +118,6 @@ export async function render(container, params = {}) {
               </div>
             </div>
 
-            <div class="card" style="margin-top:var(--space-5)">
-              <div class="card-header">
-                <div class="card-title">Client Requests <span class="tab-count">${requests.length}</span></div>
-                <a href="#/requests" class="btn btn-ghost btn-sm">View All</a>
-              </div>
-              ${requests.length === 0
-                ? `<div style="text-align:center;padding:var(--space-6);color:var(--text-muted);font-size:var(--text-sm)">No requests for this project</div>`
-                : `<div id="project-requests-list">
-                ${requests.map(r => `
-                  <div class="project-request-row" data-id="${r.id}" style="padding:var(--space-3) 0;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background var(--transition-fast)">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-2)">
-                      <div>
-                        <div style="font-size:var(--text-sm);font-weight:var(--font-medium)">${escapeHtml(r.subject)}</div>
-                        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:var(--space-2)">
-                          <span>${r.request_type.replace(/_/g,' ')}</span>
-                          <span>&bull;</span>
-                          <span>${formatRelativeTime(r.created_at)}</span>
-                        </div>
-                      </div>
-                      <div style="display:flex;gap:var(--space-1);flex-shrink:0">${requestStatusBadge(r.status)}</div>
-                    </div>
-                  </div>
-                `).join('')}
-                </div>
-                <div id="request-inline-detail" style="display:none;margin-top:var(--space-4);background:var(--color-gray-50);border:1px solid var(--border-color);border-radius:var(--border-radius);padding:var(--space-4)">
-                </div>`
-              }
-            </div>
           </div>
 
           <div>
@@ -197,6 +169,35 @@ export async function render(container, params = {}) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="card" style="margin-top:var(--space-5)">
+          <div class="card-header">
+            <div class="card-title">Client Requests <span class="tab-count">${requests.length}</span></div>
+            <a href="#/requests" class="btn btn-ghost btn-sm">View All</a>
+          </div>
+          ${requests.length === 0
+            ? `<div style="text-align:center;padding:var(--space-6);color:var(--text-muted);font-size:var(--text-sm)">No requests linked to this project yet</div>`
+            : `<div id="project-requests-list">
+            ${requests.map(r => `
+              <div class="project-request-row" data-id="${r.id}" style="padding:var(--space-3) 0;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background var(--transition-fast)">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-2)">
+                  <div>
+                    <div style="font-size:var(--text-sm);font-weight:var(--font-medium)">${escapeHtml(r.subject)}</div>
+                    <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:var(--space-2)">
+                      <span>${r.request_type.replace(/_/g,' ')}</span>
+                      <span>&bull;</span>
+                      <span>${formatRelativeTime(r.created_at)}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:var(--space-1);flex-shrink:0">${requestStatusBadge(r.status)}</div>
+                </div>
+              </div>
+            `).join('')}
+            </div>
+            <div id="request-inline-detail" style="display:none;margin-top:var(--space-4);background:var(--color-gray-50);border:1px solid var(--border-color);border-radius:var(--border-radius);padding:var(--space-4)">
+            </div>`
+          }
         </div>
       </div>
     `;
